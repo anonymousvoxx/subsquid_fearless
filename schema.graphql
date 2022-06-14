@@ -1,0 +1,36 @@
+type Round @entity {
+  id: ID!
+  index: Int!
+  timestamp: DateTime!
+  startedAt: Int!
+  endedAt: Int
+  collatorsCount: Int!
+  collators: [RoundCollator] @derivedFrom(field: "round")
+  nominators: [RoundCollator] @derivedFrom(field: "round")
+  total: BigInt!
+}
+
+type RoundCollator @entity {
+  id: ID!
+  round: Round
+  account: String! @index
+  selfBond: BigInt
+  totalBond: BigInt
+  nominators: [RoundDelegation!] @derivedFrom(field: "collator")
+}
+
+type RoundNominator @entity {
+  id: ID!
+  round: Round!
+  account: String! @index
+  bond: BigInt
+  collators: [RoundDelegation!] @derivedFrom(field: "nominator")
+}
+
+type RoundDelegation @entity {
+  id: ID!
+  round: Round!
+  collator: RoundCollator!
+  nominator: RoundNominator!
+  vote: BigInt!
+}
