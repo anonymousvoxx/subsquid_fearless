@@ -16,22 +16,18 @@ interface StorageData {
     }[]
 }
 
-async function getStorageData(ctx: StorageContext, account: Uint8Array): Promise<StorageData | undefined> {
+async function getStorageData(
+    ctx: StorageContext,
+    accounts: Uint8Array[]
+): Promise<(StorageData | undefined)[] | undefined> {
     const storage = new ParachainStakingCandidateStateStorage(ctx)
     if (!storage.isExists) return undefined
 
     if (storage.isV1001) {
-        return await storage.getAsV1001(account)
+        return await storage.getManyAsV1001(accounts)
     } else {
         throw new UnknownVersionError(storage.constructor.name)
     }
-}
-
-const storageCache: {
-    hash?: string
-    values: Map<string, CandidateState>
-} = {
-    values: new Map(),
 }
 
 interface CandidateState {
@@ -47,36 +43,47 @@ interface CandidateState {
     }[]
 }
 
-export async function getCandidateState(ctx: StorageContext, account: string): Promise<CandidateState | undefined> {
-    if (storageCache.hash !== ctx.block.hash) {
-        storageCache.hash = ctx.block.hash
-        storageCache.values.clear()
+async function queryStorageFunction(
+    ctx: StorageContext,
+    accounts: string[]
+): Promise<(CandidateState | undefined)[] | undefined> {
+    if (accounts.length === 0) return []
+
+    const u8 = accounts.map((a) => decodeId(a))
+
+    const data = await getStorageData(ctx, u8)
+    if (!data) return undefined
+
+    return data.map((d, i) =>
+        d != null
+            ? {
+                  id: accounts[i],
+                  bond: d.bond,
+                  topDelegations: d.topDelegations.map((delegation) => ({
+                      id: encodeId(delegation.owner),
+                      amount: delegation.amount,
+                  })),
+                  bottomDelegations: d.bottomDelegations.map((delegation) => ({
+                      id: encodeId(delegation.owner),
+                      amount: delegation.amount,
+                  })),
+              }
+            : undefined
+    )
+}
+
+/**
+ * DEPRECATED. Use getCandidateInfo() + getTopDelegations() + getBottomDelegations()
+ */
+export async function getCandidateState(ctx: StorageContext, account: string): Promise<CandidateState | undefined>
+export async function getCandidateState(
+    ctx: StorageContext,
+    accounts: string[]
+): Promise<(CandidateState | undefined)[] | undefined>
+export async function getCandidateState(ctx: StorageContext, accountOrAccounts: string | string[]) {
+    if (Array.isArray(accountOrAccounts)) {
+        return await queryStorageFunction(ctx, accountOrAccounts)
+    } else {
+        return (await queryStorageFunction(ctx, [accountOrAccounts]))?.[0]
     }
-
-    const key = account
-    let value = storageCache.values.get(account)
-
-    if (!value) {
-        const u8 = decodeId(account)
-
-        const data = await getStorageData(ctx, u8)
-        if (!data) return undefined
-
-        value = {
-            id: encodeId(data.id),
-            bond: data.bond,
-            topDelegations: data.topDelegations.map((delegation) => ({
-                id: encodeId(delegation.owner),
-                amount: delegation.amount,
-            })),
-            bottomDelegations: data.bottomDelegations.map((delegation) => ({
-                id: encodeId(delegation.owner),
-                amount: delegation.amount,
-            })),
-        }
-
-        storageCache.values.set(key, value)
-    }
-
-    return value
 }

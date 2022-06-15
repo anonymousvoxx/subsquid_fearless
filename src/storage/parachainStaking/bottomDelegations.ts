@@ -11,25 +11,22 @@ interface StorageData {
     total: bigint
 }
 
-async function getStorageData(ctx: StorageContext, account: Uint8Array): Promise<StorageData | undefined> {
+async function getStorageData(
+    ctx: StorageContext,
+    accounts: Uint8Array[]
+): Promise<(StorageData | undefined)[] | undefined> {
     const storage = new ParachainStakingBottomDelegationsStorage(ctx)
     if (!storage.isExists) return undefined
 
     if (storage.isV1201) {
-        return await storage.getAsV1201(account)
+        return await storage.getManyAsV1201(accounts)
     } else {
         throw new UnknownVersionError(storage.constructor.name)
     }
 }
 
-const storageCache: {
-    hash?: string
-    values: Map<string, BottomDelegations>
-} = {
-    values: new Map(),
-}
-
-interface BottomDelegations {
+interface Delegations {
+    id: string
     delegations: {
         id: string
         amount: bigint
@@ -37,34 +34,37 @@ interface BottomDelegations {
     total: bigint
 }
 
+async function queryStorageFunction(ctx: StorageContext, accounts: string[]) {
+    if (accounts.length === 0) return []
+
+    const u8 = accounts.map((a) => decodeId(a))
+
+    const data = await getStorageData(ctx, u8)
+    if (!data) return undefined
+
+    return data.map((d, i) =>
+        d != null
+            ? {
+                  id: accounts[i],
+                  delegations: d.delegations.map((delegation) => ({
+                      id: encodeId(delegation.owner),
+                      amount: delegation.amount,
+                  })),
+                  total: d.total,
+              }
+            : undefined
+    )
+}
+
+export async function getBottomDelegations(ctx: StorageContext, account: string): Promise<Delegations | undefined>
 export async function getBottomDelegations(
     ctx: StorageContext,
-    account: string
-): Promise<BottomDelegations | undefined> {
-    if (storageCache.hash !== ctx.block.hash) {
-        storageCache.hash = ctx.block.hash
-        storageCache.values.clear()
+    accounts: string[]
+): Promise<(Delegations | undefined)[] | undefined>
+export async function getBottomDelegations(ctx: StorageContext, accountOrAccounts: string | string[]) {
+    if (Array.isArray(accountOrAccounts)) {
+        return await queryStorageFunction(ctx, accountOrAccounts)
+    } else {
+        return (await queryStorageFunction(ctx, [accountOrAccounts]))?.[0]
     }
-
-    const key = account
-    let value = storageCache.values.get(account)
-
-    if (!value) {
-        const u8 = decodeId(account)
-
-        const data = await getStorageData(ctx, u8)
-        if (!data) return undefined
-
-        value = {
-            delegations: data.delegations.map((delegation) => ({
-                id: encodeId(delegation.owner),
-                amount: delegation.amount,
-            })),
-            total: data.total,
-        }
-
-        storageCache.values.set(key, value)
-    }
-
-    return value
 }

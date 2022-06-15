@@ -16,7 +16,7 @@ type RoundCollator @entity {
   account: String! @index
   selfBond: BigInt
   totalBond: BigInt
-  nominators: [RoundDelegation!] @derivedFrom(field: "collator")
+  nominators: [RoundNomination!] @derivedFrom(field: "collator")
 }
 
 type RoundNominator @entity {
@@ -24,10 +24,10 @@ type RoundNominator @entity {
   round: Round!
   account: String! @index
   bond: BigInt
-  collators: [RoundDelegation!] @derivedFrom(field: "nominator")
+  collators: [RoundNomination!] @derivedFrom(field: "nominator")
 }
 
-type RoundDelegation @entity {
+type RoundNomination @entity {
   id: ID!
   round: Round!
   collator: RoundCollator!

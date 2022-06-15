@@ -1,6 +1,6 @@
 import { SubstrateProcessor } from '@subsquid/substrate-processor'
 import { TypeormDatabase } from '@subsquid/typeorm-store'
-import { EventContext } from './types/generated/support'
+import { EventContext, StorageContext } from './types/generated/support'
 import { ParachainStakingNewRoundEvent } from './types/generated/events'
 import { UnknownVersionError } from './common/errors'
 import { Round, RoundCollator, RoundDelegation, RoundNominator } from './model'
@@ -19,6 +19,7 @@ processor.setDataSource({
 processor.setBlockRange({ from: 0 })
 
 processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
+    console.time('round')
     const roundData = getEventData(ctx)
 
     const round = new Round({
@@ -35,7 +36,7 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
     const collatorIds = await storage.parachainStaking.getSelectedCandidates(ctx)
     if (!collatorIds) return
 
-    const collatorsData = await storage.parachainStaking.old.getCollatorState(ctx, collatorIds)
+    const collatorsData = await getCollatorsData(ctx, collatorIds)
     if (!collatorsData) return
 
     const collators = new Map<string, RoundCollator>()
@@ -45,13 +46,12 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
     for (const collatorData of collatorsData) {
         if (!collatorData || collators.has(collatorData.id)) continue
 
-        const delegations = collatorData.topNominators.concat(collatorData.bottomNominators)
         let totalBond = collatorData.bond
 
-        for (const delegation of delegations) {
-            totalBond += delegation.amount
-            nominatorIds.push(delegation.id)
-            delegationsData.push({ vote: delegation.amount, nominatorId: delegation.id, collatorId: collatorData.id })
+        for (const nomination of collatorData.nominators) {
+            totalBond += nomination.amount
+            nominatorIds.push(nomination.id)
+            delegationsData.push({ vote: nomination.amount, nominatorId: nomination.id, collatorId: collatorData.id })
         }
 
         collators.set(
@@ -68,7 +68,7 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
 
     await ctx.store.save([...collators.values()])
 
-    const nominatorsData = await storage.parachainStaking.old.getNominatorState(ctx, nominatorIds)
+    const nominatorsData = await getNominatorsData(ctx, nominatorIds)
     if (!nominatorsData) return
 
     const nominators = new Map<string, RoundNominator>()
@@ -106,6 +106,7 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
     }
 
     await ctx.store.save(delegations)
+    console.timeEnd('round')
 })
 
 processor.run()
@@ -127,4 +128,93 @@ function getEventData(ctx: EventContext): EventData {
         return event.asV1300
     }
     throw new UnknownVersionError(event.constructor.name)
+}
+
+interface CollatorData {
+    id: string
+    bond: bigint
+    nominators: {
+        id: string
+        amount: bigint
+    }[]
+}
+
+// eslint-disable-next-line sonarjs/cognitive-complexity
+async function getCollatorsData(
+    ctx: StorageContext,
+    accounts: string[]
+): Promise<(CollatorData | undefined)[] | undefined> {
+    const candidateInfo = await storage.parachainStaking.getCandidateInfo(ctx, accounts)
+    if (candidateInfo) {
+        const bottomDelegations = await storage.parachainStaking.getBottomDelegations(ctx, accounts)
+        const topDelegations = await storage.parachainStaking.getTopDelegations(ctx, accounts)
+
+        return candidateInfo.map((d, i) => {
+            if (!d) return undefined
+
+            const nominators = topDelegations?.[i]?.delegations
+                ? topDelegations?.[i]?.delegations.concat(bottomDelegations?.[i]?.delegations || []) || []
+                : []
+
+            return {
+                id: d.id,
+                bond: d.bond,
+                nominators,
+            }
+        })
+    }
+
+    const candidateState = await storage.parachainStaking.getCandidateState(ctx, accounts)
+    if (candidateState) {
+        return candidateState.map((d) => {
+            if (!d) return undefined
+
+            const nominators = d.topDelegations.concat(d.bottomDelegations)
+
+            return {
+                id: d.id,
+                bond: d.bond,
+                nominators,
+            }
+        })
+    }
+
+    const collatorState = await storage.parachainStaking.old.getCollatorState(ctx, accounts)
+    if (collatorState) {
+        return collatorState.map((d) => {
+            if (!d) return undefined
+
+            const nominators = d.topNominators.concat(d.bottomNominators)
+
+            return {
+                id: d.id,
+                bond: d.bond,
+                nominators,
+            }
+        })
+    }
+
+    return undefined
+}
+
+interface NominatorData {
+    id: string
+    bond: bigint
+}
+
+async function getNominatorsData(
+    ctx: StorageContext,
+    accounts: string[]
+): Promise<(NominatorData | undefined)[] | undefined> {
+    const delegatorState = await storage.parachainStaking.getDelegatorState(ctx, accounts)
+    if (delegatorState) {
+        return delegatorState
+    }
+
+    const nominatorState = await storage.parachainStaking.old.getNominatorState(ctx, accounts)
+    if (nominatorState) {
+        return nominatorState
+    }
+
+    return undefined
 }
