@@ -19,7 +19,6 @@ processor.setDataSource({
 processor.setBlockRange({ from: 0 })
 
 processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
-    console.time('round')
     const roundData = getEventData(ctx)
 
     const round = new Round({
@@ -43,8 +42,9 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
 
     const collators = new Map<string, RoundCollator>()
 
-    const nominatorIds = new Array<string>()
-    const delegationsData = new Array<{ vote: bigint; nominatorId: string; collatorId: string }>()
+    const nominatorIds: string[] = []
+    const delegationsData: { vote: bigint; nominatorId: string; collatorId: string }[] = []
+
     for (const collatorData of collatorsData) {
         if (!collatorData || collators.has(collatorData.id)) continue
 
@@ -91,24 +91,28 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
 
     await ctx.store.save([...nominators.values()])
 
-    const delegations = new Array<RoundDelegation>(delegationsData.length)
+    const delegations = new Map<string, RoundDelegation>()
 
-    for (let i = 0; i < delegationsData.length; i++) {
-        const collator = collators.get(delegationsData[i].collatorId)
-        const nominator = nominators.get(delegationsData[i].nominatorId)
+    for (const delegationData of delegationsData) {
+        const collator = collators.get(delegationData.collatorId)
+        const nominator = nominators.get(delegationData.nominatorId)
         assert(collator != null && nominator != null)
 
-        delegations[i] = new RoundDelegation({
-            id: `${round.index}-${collator.account}-${nominator.account}`,
-            round,
-            collator,
-            nominator,
-            vote: delegationsData[i].vote,
-        })
+        const id = `${round.index}-${collator.account}-${nominator.account}`
+
+        delegations.set(
+            id,
+            new RoundDelegation({
+                id,
+                round,
+                collator,
+                nominator,
+                vote: delegationData.vote,
+            })
+        )
     }
 
     await ctx.store.save(delegations)
-    console.timeEnd('round')
 })
 
 processor.run()
