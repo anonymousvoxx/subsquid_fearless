@@ -1,5 +1,5 @@
-import { SubstrateProcessor } from '@subsquid/substrate-processor'
-import { TypeormDatabase } from '@subsquid/typeorm-store'
+import { CommonHandlerContext, SubstrateProcessor } from '@subsquid/substrate-processor'
+import { Store, TypeormDatabase } from '@subsquid/typeorm-store'
 import { EventContext, StorageContext } from './types/generated/support'
 import { ParachainStakingNewRoundEvent } from './types/generated/events'
 import { UnknownVersionError } from './common/errors'
@@ -33,10 +33,12 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
 
     await ctx.store.insert(round)
 
+    const prevCtx = createPrevStorageContext(ctx)
+
     const collatorIds = await storage.parachainStaking.getSelectedCandidates(ctx)
     if (!collatorIds) return
 
-    const collatorsData = await getCollatorsData(ctx, collatorIds)
+    const collatorsData = await getCollatorsData(prevCtx, collatorIds)
     if (!collatorsData) return
 
     const collators = new Map<string, RoundCollator>()
@@ -68,7 +70,7 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
 
     await ctx.store.save([...collators.values()])
 
-    const nominatorsData = await getNominatorsData(ctx, nominatorIds)
+    const nominatorsData = await getNominatorsData(prevCtx, nominatorIds)
     if (!nominatorsData) return
 
     const nominators = new Map<string, RoundNominator>()
@@ -128,6 +130,17 @@ function getEventData(ctx: EventContext): EventData {
         return event.asV1300
     }
     throw new UnknownVersionError(event.constructor.name)
+}
+
+export function createPrevStorageContext(ctx: CommonHandlerContext<Store>) {
+    return {
+        _chain: ctx._chain,
+        block: {
+            ...ctx.block,
+            hash: ctx.block.parentHash,
+            height: ctx.block.height,
+        },
+    }
 }
 
 interface CollatorData {
