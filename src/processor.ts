@@ -7,7 +7,7 @@ import { Round, RoundCollator, RoundDelegation, RoundNominator } from './model'
 import storage from './storage'
 import assert from 'assert'
 
-const database = new TypeormDatabase(`parachain_staking_squid`)
+const database = new TypeormDatabase()
 const processor = new SubstrateProcessor(database)
 
 processor.setTypesBundle('moonriver')
