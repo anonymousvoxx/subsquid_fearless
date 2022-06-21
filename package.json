@@ -1,5 +1,5 @@
 {
-  "name": "subwallet",
+  "name": "Squid",
   "private": true,
   "scripts": {
     "build": "rm -rf lib && tsc",
