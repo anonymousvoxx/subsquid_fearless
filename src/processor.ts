@@ -13,8 +13,8 @@ const processor = new SubstrateProcessor(database)
 processor.setTypesBundle('moonriver')
 processor.setBatchSize(500)
 processor.setDataSource({
-    archive: 'https://moonriver.archive.subsquid.io/graphql',
-    chain: 'wss://wss.moonriver.moonbeam.network',
+    archive: 'https://moonbeam.archive.subsquid.io/graphql',
+    chain: 'wss://wss.moonbeam.network',
 })
 processor.setBlockRange({ from: 0 })
 
@@ -112,7 +112,7 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
         )
     }
 
-    await ctx.store.save(delegations)
+    await ctx.store.save([...delegations.values()])
 })
 
 processor.run()
@@ -196,21 +196,6 @@ async function getCollatorsData(
         })
     }
 
-    const collatorState = await storage.parachainStaking.old.getCollatorState(ctx, accounts)
-    if (collatorState) {
-        return collatorState.map((d) => {
-            if (!d) return undefined
-
-            const nominators = d.topNominators.concat(d.bottomNominators)
-
-            return {
-                id: d.id,
-                bond: d.bond,
-                nominators,
-            }
-        })
-    }
-
     return undefined
 }
 
@@ -226,11 +211,6 @@ async function getNominatorsData(
     const delegatorState = await storage.parachainStaking.getDelegatorState(ctx, accounts)
     if (delegatorState) {
         return delegatorState
-    }
-
-    const nominatorState = await storage.parachainStaking.old.getNominatorState(ctx, accounts)
-    if (nominatorState) {
-        return nominatorState
     }
 
     return undefined

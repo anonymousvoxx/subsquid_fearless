@@ -1,7 +1,7 @@
 {
   "outDir": "../src/types/generated",
-  "chainVersions": "./versions.json",
-  "typesBundle": "moonriver",
+  "specVersions": "./versions.jsonl",
+  "typesBundle": "moonbeam",
   "events": [
     "ParachainStaking.NewRound",
     "ParachainStaking.Rewarded",
@@ -35,8 +35,6 @@
     "ParachainStaking.BottomDelegations",
     "ParachainStaking.CollatorState2",
     "ParachainStaking.NominatorState2",
-    "ParachainStaking.CollatorState",
-    "ParachainStaking.NominatorState",
     "ParachainStaking.SelectedCandidates"
   ]
 }

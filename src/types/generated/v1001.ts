@@ -25,6 +25,17 @@ export interface CollatorCandidate {
   state: CollatorStatus
 }
 
+export interface Collator2 {
+  id: AccountId20
+  bond: bigint
+  nominators: AccountId20[]
+  topNominators: Bond[]
+  bottomNominators: Bond[]
+  totalCounted: bigint
+  totalBacking: bigint
+  state: CollatorStatus
+}
+
 export interface Delegator {
   id: AccountId20
   delegations: Bond[]
