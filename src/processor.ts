@@ -14,7 +14,7 @@ processor.setTypesBundle('moonriver')
 processor.setBatchSize(500)
 processor.setDataSource({
     archive: 'https://moonbeam.archive.subsquid.io/graphql',
-    chain: 'wss://wss.moonbeam.network',
+    chain: 'wss://wss.api.moonbeam.network',
 })
 processor.setBlockRange({ from: 0 })
 
