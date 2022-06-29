@@ -11,7 +11,7 @@ const database = new TypeormDatabase()
 const processor = new SubstrateProcessor(database)
 
 processor.setTypesBundle('moonriver')
-processor.setBatchSize(500)
+processor.setBatchSize(100)
 processor.setDataSource({
     archive: 'https://moonbeam.archive.subsquid.io/graphql',
     chain: 'wss://wss.api.moonbeam.network',
