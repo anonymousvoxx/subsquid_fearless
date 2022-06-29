@@ -1,7 +1,7 @@
 import { UnknownVersionError } from '../../common/errors'
 import { decodeId, encodeId } from '../../common/tools'
 import { ParachainStakingTopDelegationsStorage } from '../../types/generated/storage'
-import { StorageContext } from '../../types/generated/support'
+import { BlockContext } from '../../types/generated/support'
 
 interface StorageData {
     delegations: {
@@ -12,7 +12,7 @@ interface StorageData {
 }
 
 async function getStorageData(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: Uint8Array[]
 ): Promise<(StorageData | undefined)[] | undefined> {
     const storage = new ParachainStakingTopDelegationsStorage(ctx)
@@ -34,7 +34,7 @@ interface Delegations {
     total: bigint
 }
 
-async function queryStorageFunction(ctx: StorageContext, accounts: string[]) {
+async function queryStorageFunction(ctx: BlockContext, accounts: string[]) {
     if (accounts.length === 0) return []
 
     const u8 = accounts.map((a) => decodeId(a))
@@ -56,12 +56,12 @@ async function queryStorageFunction(ctx: StorageContext, accounts: string[]) {
     )
 }
 
-export async function getTopDelegations(ctx: StorageContext, account: string): Promise<Delegations | undefined>
+export async function getTopDelegations(ctx: BlockContext, account: string): Promise<Delegations | undefined>
 export async function getTopDelegations(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(Delegations | undefined)[] | undefined>
-export async function getTopDelegations(ctx: StorageContext, accountOrAccounts: string | string[]) {
+export async function getTopDelegations(ctx: BlockContext, accountOrAccounts: string | string[]) {
     if (Array.isArray(accountOrAccounts)) {
         return await queryStorageFunction(ctx, accountOrAccounts)
     } else {

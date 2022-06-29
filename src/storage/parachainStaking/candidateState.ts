@@ -1,7 +1,7 @@
 import { UnknownVersionError } from '../../common/errors'
 import { decodeId, encodeId } from '../../common/tools'
 import { ParachainStakingCandidateStateStorage } from '../../types/generated/storage'
-import { StorageContext } from '../../types/generated/support'
+import { BlockContext } from '../../types/generated/support'
 
 interface StorageData {
     id: Uint8Array
@@ -17,7 +17,7 @@ interface StorageData {
 }
 
 async function getStorageData(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: Uint8Array[]
 ): Promise<(StorageData | undefined)[] | undefined> {
     const storage = new ParachainStakingCandidateStateStorage(ctx)
@@ -44,7 +44,7 @@ interface CandidateState {
 }
 
 async function queryStorageFunction(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(CandidateState | undefined)[] | undefined> {
     if (accounts.length === 0) return []
@@ -75,12 +75,12 @@ async function queryStorageFunction(
 /**
  * DEPRECATED. Use getCandidateInfo() + getTopDelegations() + getBottomDelegations()
  */
-export async function getCandidateState(ctx: StorageContext, account: string): Promise<CandidateState | undefined>
+export async function getCandidateState(ctx: BlockContext, account: string): Promise<CandidateState | undefined>
 export async function getCandidateState(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(CandidateState | undefined)[] | undefined>
-export async function getCandidateState(ctx: StorageContext, accountOrAccounts: string | string[]) {
+export async function getCandidateState(ctx: BlockContext, accountOrAccounts: string | string[]) {
     if (Array.isArray(accountOrAccounts)) {
         return await queryStorageFunction(ctx, accountOrAccounts)
     } else {

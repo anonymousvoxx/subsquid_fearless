@@ -2,6 +2,17 @@ import type {Result} from './support'
 
 export type H160 = Uint8Array
 
+export type NominatorAdded = NominatorAdded_AddedToTop | NominatorAdded_AddedToBottom
+
+export interface NominatorAdded_AddedToTop {
+  __kind: 'AddedToTop'
+  newTotal: bigint
+}
+
+export interface NominatorAdded_AddedToBottom {
+  __kind: 'AddedToBottom'
+}
+
 export interface Nominator2 {
   nominations: Bond[]
   revocations: H160[]

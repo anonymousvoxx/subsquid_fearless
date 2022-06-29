@@ -1,7 +1,7 @@
 import { UnknownVersionError } from '../../common/errors'
 import { decodeId, encodeId } from '../../common/tools'
 import { ParachainStakingDelegatorStateStorage } from '../../types/generated/storage'
-import { StorageContext } from '../../types/generated/support'
+import { BlockContext } from '../../types/generated/support'
 
 interface StorageData {
     id: Uint8Array
@@ -13,7 +13,7 @@ interface StorageData {
 }
 
 async function getStorageData(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: Uint8Array[]
 ): Promise<(StorageData | undefined)[] | undefined> {
     const storage = new ParachainStakingDelegatorStateStorage(ctx)
@@ -37,7 +37,7 @@ interface DelegatorState {
     }[]
 }
 
-async function queryStorageFunction(ctx: StorageContext, accounts: string[]) {
+async function queryStorageFunction(ctx: BlockContext, accounts: string[]) {
     if (accounts.length === 0) return []
 
     const u8 = accounts.map((a) => decodeId(a))
@@ -59,12 +59,12 @@ async function queryStorageFunction(ctx: StorageContext, accounts: string[]) {
     )
 }
 
-export async function getDelegatorState(ctx: StorageContext, account: string): Promise<DelegatorState | undefined>
+export async function getDelegatorState(ctx: BlockContext, account: string): Promise<DelegatorState | undefined>
 export async function getDelegatorState(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(DelegatorState | undefined)[] | undefined>
-export async function getDelegatorState(ctx: StorageContext, accountOrAccounts: string | string[]) {
+export async function getDelegatorState(ctx: BlockContext, accountOrAccounts: string | string[]) {
     if (Array.isArray(accountOrAccounts)) {
         return await queryStorageFunction(ctx, accountOrAccounts)
     } else {

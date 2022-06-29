@@ -1,6 +1,6 @@
 import { CommonHandlerContext, SubstrateProcessor } from '@subsquid/substrate-processor'
 import { Store, TypeormDatabase } from '@subsquid/typeorm-store'
-import { EventContext, StorageContext } from './types/generated/support'
+import { EventContext, BlockContext } from './types/generated/support'
 import { ParachainStakingNewRoundEvent } from './types/generated/events'
 import { UnknownVersionError } from './common/errors'
 import { Round, RoundCollator, RoundDelegation, RoundNominator } from './model'
@@ -32,7 +32,7 @@ processor.addEventHandler('ParachainStaking.NewRound', async (ctx) => {
 
     await ctx.store.insert(round)
 
-    const prevCtx = createPrevStorageContext(ctx)
+    const prevCtx = createPrevBlockContext(ctx)
 
     const collatorIds = await storage.parachainStaking.getSelectedCandidates(ctx)
     if (!collatorIds) return
@@ -127,8 +127,11 @@ export interface EventData {
 function getEventData(ctx: EventContext): EventData {
     const event = new ParachainStakingNewRoundEvent(ctx)
 
-    if (event.isV49) {
-        const [startingBlock, round, selectedCollatorsNumber, totalBalance] = event.asV49
+    if (event.isV900) {
+        const [startingBlock, round, selectedCollatorsNumber, totalBalance] = event.asV900
+        return { startingBlock, round, selectedCollatorsNumber, totalBalance }
+    } else if (event.isV1001) {
+        const [startingBlock, round, selectedCollatorsNumber, totalBalance] = event.asV1001
         return { startingBlock, round, selectedCollatorsNumber, totalBalance }
     } else if (event.isV1300) {
         return event.asV1300
@@ -136,7 +139,7 @@ function getEventData(ctx: EventContext): EventData {
     throw new UnknownVersionError(event.constructor.name)
 }
 
-export function createPrevStorageContext(ctx: CommonHandlerContext<Store>) {
+export function createPrevBlockContext(ctx: CommonHandlerContext<Store>) {
     return {
         _chain: ctx._chain,
         block: {
@@ -158,7 +161,7 @@ interface CollatorData {
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 async function getCollatorsData(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(CollatorData | undefined)[] | undefined> {
     const candidateInfo = await storage.parachainStaking.getCandidateInfo(ctx, accounts)
@@ -205,7 +208,7 @@ interface NominatorData {
 }
 
 async function getNominatorsData(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(NominatorData | undefined)[] | undefined> {
     const delegatorState = await storage.parachainStaking.getDelegatorState(ctx, accounts)

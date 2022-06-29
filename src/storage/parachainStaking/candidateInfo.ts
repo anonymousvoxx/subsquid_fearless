@@ -1,14 +1,14 @@
 import { UnknownVersionError } from '../../common/errors'
 import { decodeId } from '../../common/tools'
 import { ParachainStakingCandidateInfoStorage } from '../../types/generated/storage'
-import { StorageContext } from '../../types/generated/support'
+import { BlockContext } from '../../types/generated/support'
 
 interface StorageData {
     bond: bigint
 }
 
 async function getStorageData(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: Uint8Array[]
 ): Promise<(StorageData | undefined)[] | undefined> {
     const storage = new ParachainStakingCandidateInfoStorage(ctx)
@@ -27,7 +27,7 @@ interface CandidateInfo {
 }
 
 async function queryStorageFunction(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(CandidateInfo | undefined)[] | undefined> {
     if (accounts.length === 0) return []
@@ -47,12 +47,12 @@ async function queryStorageFunction(
     )
 }
 
-export async function getCandidateInfo(ctx: StorageContext, account: string): Promise<CandidateInfo | undefined>
+export async function getCandidateInfo(ctx: BlockContext, account: string): Promise<CandidateInfo | undefined>
 export async function getCandidateInfo(
-    ctx: StorageContext,
+    ctx: BlockContext,
     accounts: string[]
 ): Promise<(CandidateInfo | undefined)[] | undefined>
-export async function getCandidateInfo(ctx: StorageContext, accountOrAccounts: string | string[]) {
+export async function getCandidateInfo(ctx: BlockContext, accountOrAccounts: string | string[]) {
     if (Array.isArray(accountOrAccounts)) {
         return await queryStorageFunction(ctx, accountOrAccounts)
     } else {
