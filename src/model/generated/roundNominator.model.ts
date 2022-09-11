@@ -23,6 +23,6 @@ export class RoundNominator {
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
   bond!: bigint | undefined | null
 
-  @OneToMany_(() => RoundDelegation, e => e.nominator)
+  @OneToMany_(() => RoundDelegation, e => e.delegator)
   collators!: RoundDelegation[]
 }

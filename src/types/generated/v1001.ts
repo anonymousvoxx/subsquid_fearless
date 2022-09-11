@@ -13,29 +13,6 @@ export interface DelegatorAdded_AddedToBottom {
   __kind: 'AddedToBottom'
 }
 
-export interface CollatorCandidate {
-  id: AccountId20
-  bond: bigint
-  delegators: AccountId20[]
-  topDelegations: Bond[]
-  bottomDelegations: Bond[]
-  totalCounted: bigint
-  totalBacking: bigint
-  request: (CandidateBondLessRequest | undefined)
-  state: CollatorStatus
-}
-
-export interface Collator2 {
-  id: AccountId20
-  bond: bigint
-  nominators: AccountId20[]
-  topNominators: Bond[]
-  bottomNominators: Bond[]
-  totalCounted: bigint
-  totalBacking: bigint
-  state: CollatorStatus
-}
-
 export interface Delegator {
   id: AccountId20
   delegations: Bond[]
@@ -58,26 +35,6 @@ export interface Bond {
   amount: bigint
 }
 
-export interface CandidateBondLessRequest {
-  amount: bigint
-  whenExecutable: number
-}
-
-export type CollatorStatus = CollatorStatus_Active | CollatorStatus_Idle | CollatorStatus_Leaving
-
-export interface CollatorStatus_Active {
-  __kind: 'Active'
-}
-
-export interface CollatorStatus_Idle {
-  __kind: 'Idle'
-}
-
-export interface CollatorStatus_Leaving {
-  __kind: 'Leaving'
-  value: number
-}
-
 export interface PendingDelegationRequests {
   revocationsCount: number
   requests: [AccountId20, DelegationRequest][]
@@ -93,6 +50,29 @@ export interface DelegatorStatus_Active {
 export interface DelegatorStatus_Leaving {
   __kind: 'Leaving'
   value: number
+}
+
+export interface CollatorCandidate {
+  id: AccountId20
+  bond: bigint
+  delegators: AccountId20[]
+  topDelegations: Bond[]
+  bottomDelegations: Bond[]
+  totalCounted: bigint
+  totalBacking: bigint
+  request: undefined
+  state: undefined
+}
+
+export interface Collator2 {
+  id: AccountId20
+  bond: bigint
+  nominators: AccountId20[]
+  topNominators: Bond[]
+  bottomNominators: Bond[]
+  totalCounted: bigint
+  totalBacking: bigint
+  state: undefined
 }
 
 export interface DelegationRequest {

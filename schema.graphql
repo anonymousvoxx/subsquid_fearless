@@ -5,18 +5,31 @@ type Round @entity {
   startedAt: Int!
   endedAt: Int
   collatorsCount: Int!
-  collators: [RoundCollator] @derivedFrom(field: "round")
-  nominators: [RoundCollator] @derivedFrom(field: "round")
+  collators: [CollatorRound] @derivedFrom(field: "round")
   total: BigInt!
 }
 
-type RoundCollator @entity {
+type Collator @entity {
+  id: ID!
+  bond: BigInt
+  apr24h: Float
+}
+
+type CollatorRound @entity {
   id: ID!
   round: Round
-  account: String! @index
-  selfBond: BigInt
+  collator: String!
+  ownBond: BigInt
   totalBond: BigInt
+  rewardAmount: BigInt
+  apr: Float
+  aprTechnNumerator: Float
+  aprTechnDenominator: Float
   nominators: [RoundDelegation!] @derivedFrom(field: "collator")
+}
+
+type Delegator @entity {
+  id: ID!
 }
 
 type RoundNominator @entity {
@@ -24,13 +37,29 @@ type RoundNominator @entity {
   round: Round!
   account: String! @index
   bond: BigInt
-  collators: [RoundDelegation!] @derivedFrom(field: "nominator")
+  collators: [RoundDelegation!] @derivedFrom(field: "delegator")
 }
 
 type RoundDelegation @entity {
   id: ID!
   round: Round!
-  collator: RoundCollator!
-  nominator: RoundNominator!
-  vote: BigInt!
+  collator: CollatorRound!
+  delegator: RoundNominator!
+  amount: BigInt!
+}
+
+type DelegatorHistoryElement @entity {
+  id: ID!
+  blockNumber: Int!
+  delegator: Delegator
+  collator: Collator
+  timestamp: DateTime!
+  type: Int!
+  round: Round!
+  amount: BigInt!
+}
+
+type ErrorEvent @entity {
+  id: ID!
+  description: String!
 }

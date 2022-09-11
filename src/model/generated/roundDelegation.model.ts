@@ -1,7 +1,7 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 import {Round} from "./round.model"
-import {RoundCollator} from "./roundCollator.model"
+import {CollatorRound} from "./collatorRound.model"
 import {RoundNominator} from "./roundNominator.model"
 
 @Entity_()
@@ -18,13 +18,13 @@ export class RoundDelegation {
   round!: Round
 
   @Index_()
-  @ManyToOne_(() => RoundCollator, {nullable: false})
-  collator!: RoundCollator
+  @ManyToOne_(() => CollatorRound, {nullable: false})
+  collator!: CollatorRound
 
   @Index_()
   @ManyToOne_(() => RoundNominator, {nullable: false})
-  nominator!: RoundNominator
+  delegator!: RoundNominator
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  vote!: bigint
+  amount!: bigint
 }

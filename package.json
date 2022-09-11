@@ -19,6 +19,8 @@
     "pg": "^8.7.3"
   },
   "devDependencies": {
+    "@polkadot/api": "^6",
+    "@polkadot/types": "9.2.3",
     "@subsquid/typeorm-codegen": "^0.0.2",
     "@subsquid/substrate-metadata-explorer": "^1.0.3",
     "@subsquid/substrate-typegen": "^1.0.2",
