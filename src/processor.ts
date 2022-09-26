@@ -276,7 +276,9 @@ processor.addEventHandler('ParachainStaking.Delegation', async (ctx) => {
                 })
                 await ctx.store.insert(newCollator)
             }
-            const collatorsData = await getCollatorsData(ctx, [encodeId(delegationData.candidate)])
+            const prevCtx = createPrevBlockContext(ctx)
+            const collatorsData = await getCollatorsData(prevCtx, [encodeId(delegationData.candidate)])
+            ctx.log.info(prevCtx)
             if (collatorsData) {
                 ctx.log.info('collatorsData')
                 ctx.log.info(collatorsData)
@@ -339,6 +341,42 @@ processor.addEventHandler('ParachainStaking.DelegationDecreased', async (ctx) =>
         const delegator = await ctx.store.findBy(RoundNominator, { id: delegatorRoundId })
 
         const collatorRoundId = `${lastRound[0].index}-${encodeId(decreaseData.candidate)}`
+        const collatorSearch = await ctx.store.findBy(CollatorRound, { id: collatorRoundId })
+        if (collatorSearch[0] === undefined) {
+            ctx.log.info('collator undefined')
+            const collatorEntitySearch = await ctx.store.findBy(Collator, { id: encodeId(decreaseData.candidate) })
+            const collatorsData = await getCollatorsData(ctx, [encodeId(decreaseData.candidate)])
+            if (collatorsData) {
+                ctx.log.info('collatorsData')
+                ctx.log.info(collatorsData)
+                for (const collatorData of collatorsData) {
+                    if (!collatorData) continue
+
+                    let totalBond = collatorData.bond
+                    if (collatorEntitySearch === undefined) {
+                        const newCollator = new Collator({
+                            id: encodeId(decreaseData.candidate),
+                            bond: collatorData.bond,
+                            apr24h: 0.0,
+                        })
+                        await ctx.store.insert(newCollator)
+                    }
+
+                    for (const nomination of collatorData.nominators) {
+                        totalBond += nomination.amount
+                    }
+                    const newCollatorRound = new CollatorRound({
+                        id: collatorRoundId,
+                        round: lastRound[0],
+                        collator: encodeId(decreaseData.candidate),
+                        ownBond: collatorData.bond,
+                        totalBond: totalBond,
+                        rewardAmount: null,
+                    })
+                    await ctx.store.insert(newCollatorRound)
+                }
+            }
+        }
         const collator = await ctx.store.findBy(CollatorRound, { id: collatorRoundId })
         ctx.log.info(`${lastRound[0].index}-${collator[0].collator}-${delegator[0].account}`)
         const delegation = await ctx.store.findBy(RoundDelegation, {
@@ -483,6 +521,42 @@ processor.addEventHandler('ParachainStaking.DelegationRevoked', async (ctx) => {
         const delegator = await ctx.store.findBy(RoundNominator, { id: delegatorRoundId })
 
         const collatorRoundId = `${lastRound[0].index}-${encodeId(revokeData.candidate)}`
+        const collatorSearch = await ctx.store.findBy(CollatorRound, { id: collatorRoundId })
+        if (collatorSearch[0] === undefined) {
+            ctx.log.info('collator undefined')
+            const collatorEntitySearch = await ctx.store.findBy(Collator, { id: encodeId(revokeData.candidate) })
+            const collatorsData = await getCollatorsData(ctx, [encodeId(revokeData.candidate)])
+            if (collatorsData) {
+                ctx.log.info('collatorsData')
+                ctx.log.info(collatorsData)
+                for (const collatorData of collatorsData) {
+                    if (!collatorData) continue
+
+                    let totalBond = collatorData.bond
+                    if (collatorEntitySearch === undefined) {
+                        const newCollator = new Collator({
+                            id: encodeId(revokeData.candidate),
+                            bond: collatorData.bond,
+                            apr24h: 0.0,
+                        })
+                        await ctx.store.insert(newCollator)
+                    }
+
+                    for (const nomination of collatorData.nominators) {
+                        totalBond += nomination.amount
+                    }
+                    const newCollatorRound = new CollatorRound({
+                        id: collatorRoundId,
+                        round: lastRound[0],
+                        collator: encodeId(revokeData.candidate),
+                        ownBond: collatorData.bond,
+                        totalBond: totalBond,
+                        rewardAmount: null,
+                    })
+                    await ctx.store.insert(newCollatorRound)
+                }
+            }
+        }
         const collator = await ctx.store.findBy(CollatorRound, { id: collatorRoundId })
         ctx.log.info(`${lastRound[0].index}-${collator[0].collator}-${delegator[0].account}`)
         const delegation = await ctx.store.findBy(RoundDelegation, {
@@ -490,13 +564,12 @@ processor.addEventHandler('ParachainStaking.DelegationRevoked', async (ctx) => {
             delegator: { account: delegator[0].account },
         })
         delegation[0].amount = delegation[0].amount - revokeData.unstakedAmount
-        if (delegation[0].round === undefined) {
-            const round = await ctx.store.findBy(Round, { index: Number(delegation[0].id.split('-')[0]) })
-            delegation[0].round = round[0]
-            delegation[0].collator = collator[0]
-            delegation[0].delegator = delegator[0]
-        }
-        await ctx.store.save(delegation)
+        const round = await ctx.store.findBy(Round, { index: Number(delegation[0].id.split('-')[0]) })
+        ctx.log.info(`${round[0].id}-here`)
+        delegation[0].round = round[0]
+        delegation[0].collator = collator[0]
+        delegation[0].delegator = delegator[0]
+        await ctx.store.save(delegation[0])
         const collatorEntity = await ctx.store.findBy(Collator, { id: collator[0].collator })
         const delegatorEntity = await ctx.store.findBy(Delegator, { id: delegator[0].account })
         const historyElement = new DelegatorHistoryElement({
