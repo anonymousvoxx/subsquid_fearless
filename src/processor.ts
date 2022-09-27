@@ -148,12 +148,10 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
         take: 1,
     })
     if (lastRound && rewardData) {
-        const collator = await ctx.store.find(Collator, { where: { id: encodeId(rewardData.account)  }, take: 1 })
+        const collator = await ctx.store.find(Collator, { where: { id: encodeId(rewardData.account) }, take: 1 })
         const delegator = await ctx.store.find(Delegator, { where: { id: encodeId(rewardData.account) }, take: 1 })
         ctx.log.info({ collator })
-        ctx.log.info('wwwww')
         ctx.log.info(delegator[0].id)
-        ctx.log.info('eeeee')
         if (collator[0]) {
             //collatorRound[0].rewardAmount = rewardData.rewards
             //await ctx.store.save(collatorRound[0])
@@ -365,8 +363,7 @@ processor.addEventHandler('ParachainStaking.Delegation', async (ctx) => {
         ctx.log.info(collatorEntity[0])
         if (collatorEntity[0] === undefined) {
             ctx.log.info('a')
-        }
-        else {
+        } else {
             ctx.log.info('b')
         }
         ctx.log.info('collatorEntity end')
@@ -400,7 +397,6 @@ processor.addEventHandler('ParachainStaking.DelegationDecreased', async (ctx) =>
         const collatorRoundId = `${lastRound[0].index}-${encodeId(decreaseData.candidate)}`
         const collatorSearch = await ctx.store.findBy(CollatorRound, { id: collatorRoundId })
         if (collatorSearch[0] === undefined) {
-            ctx.log.info('collator undefined')
             const collatorEntitySearch = await ctx.store.findBy(Collator, { id: encodeId(decreaseData.candidate) })
             const collatorsData = await getCollatorsData(ctx, [encodeId(decreaseData.candidate)])
             if (collatorsData) {
