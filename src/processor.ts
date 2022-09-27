@@ -148,13 +148,15 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
         take: 1,
     })
     if (lastRound && rewardData) {
-        const collatorRoundId = `${lastRound[0].index}-${encodeId(rewardData.account)}`
-        const collatorRound = await ctx.store.find(CollatorRound, { where: { id: collatorRoundId }, take: 1 })
+        const collator = await ctx.store.find(Collator, { where: { id: encodeId(rewardData.account)  }, take: 1 })
         const delegator = await ctx.store.find(Delegator, { where: { id: encodeId(rewardData.account) }, take: 1 })
-        ctx.log.info({ collatorRound })
-        if (collatorRound[0]) {
-            collatorRound[0].rewardAmount = rewardData.rewards
-            await ctx.store.save(collatorRound[0])
+        ctx.log.info({ collator })
+        ctx.log.info('wwwww')
+        ctx.log.info(delegator[0].id)
+        ctx.log.info('eeeee')
+        if (collator[0]) {
+            //collatorRound[0].rewardAmount = rewardData.rewards
+            //await ctx.store.save(collatorRound[0])
             const collatorLastRoundId = `${lastRound[0].index}-${encodeId(rewardData.account)}`
             const collatorLastRound = await ctx.store.find(CollatorRound, {
                 where: { id: collatorLastRoundId },
@@ -163,7 +165,7 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             if (collatorLastRound[0].totalBond) {
                 collatorLastRound[0].apr = Number((BigInt(100) * rewardData.rewards) / collatorLastRound[0].totalBond)
             }
-            await ctx.store.save(collatorLastRound)
+            await ctx.store.save(collatorLastRound[0])
             const collatorSearch = await ctx.store.find(Collator, {
                 where: { id: encodeId(rewardData.account) },
                 take: 1,
@@ -190,7 +192,7 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                     const lastApr = collatorLastRound[0].apr || 0
                     const agrApr = collator[0].apr24h || 0
                     collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
-                    await ctx.store.save(collator)
+                    await ctx.store.save(collator[0])
                 } else {
                     const roundFirst = await ctx.store.find(Round, {
                         where: { index: lastRound[0].index - 3 },
@@ -202,13 +204,12 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                         take: 1,
                     })
                     if (collatorFirstRound[0]) {
-                        ctx.log.info('2')
                         ctx.log.info(collator[0].id)
                         const apr = collatorFirstRound[0].apr || 0
                         const lastApr = collatorLastRound[0].apr || 0
                         const agrApr = collator[0].apr24h || 0
                         collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
-                        await ctx.store.save(collator)
+                        await ctx.store.save(collator[0])
                     } else {
                         const roundFirst = await ctx.store.find(Round, {
                             where: { index: lastRound[0].index - 2 },
@@ -226,12 +227,12 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                             const lastApr = collatorLastRound[0].apr || 0
                             const agrApr = collator[0].apr24h || 0
                             collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
-                            await ctx.store.save(collator)
+                            await ctx.store.save(collator[0])
                         } else {
                             ctx.log.info('4')
                             ctx.log.info(collator[0].id)
                             collator[0].apr24h = collatorLastRound[0].apr
-                            await ctx.store.save(collator)
+                            await ctx.store.save(collator[0])
                         }
                     }
                 }
@@ -269,11 +270,14 @@ processor.addEventHandler('ParachainStaking.Delegation', async (ctx) => {
     if (lastRound) {
         const delegatorRoundId = `${lastRound[0].index}-${encodeId(delegationData.delegator)}`
         ctx.log.info(delegatorRoundId)
-        const delegatorSearch = await ctx.store.findBy(RoundNominator, { id: delegatorRoundId })
+        const delegatorSearch = await ctx.store.find(RoundNominator, { where: { id: delegatorRoundId }, take: 1 })
         if (delegatorSearch[0] === undefined) {
             ctx.log.info('delegator undefined')
             ctx.log.info(encodeId(delegationData.delegator))
-            const delegatorEntitySearch = await ctx.store.findBy(Delegator, { id: encodeId(delegationData.delegator) })
+            const delegatorEntitySearch = await ctx.store.find(Delegator, {
+                where: { id: encodeId(delegationData.delegator) },
+                take: 1,
+            })
             if (delegatorEntitySearch === undefined) {
                 const newDelegator = new Delegator({ id: encodeId(delegationData.delegator) })
                 await ctx.store.insert(newDelegator)
@@ -286,12 +290,15 @@ processor.addEventHandler('ParachainStaking.Delegation', async (ctx) => {
             })
             await ctx.store.insert(newDelegatorRound)
         }
-        const delegator = await ctx.store.findBy(RoundNominator, { id: delegatorRoundId })
+        const delegator = await ctx.store.find(RoundNominator, { where: { id: delegatorRoundId }, take: 1 })
         const collatorRoundId = `${lastRound[0].index}-${encodeId(delegationData.candidate)}`
         ctx.log.info(collatorRoundId)
-        const collatorSearch = await ctx.store.findBy(CollatorRound, { id: collatorRoundId })
+        const collatorSearch = await ctx.store.find(CollatorRound, { where: { id: collatorRoundId }, take: 1 })
         if (collatorSearch[0] === undefined) {
-            const collatorEntitySearch = await ctx.store.findBy(Collator, { id: encodeId(delegationData.candidate) })
+            const collatorEntitySearch = await ctx.store.find(Collator, {
+                where: { id: encodeId(delegationData.candidate) },
+                take: 1,
+            })
             if (collatorEntitySearch === undefined) {
                 const newCollator = new Collator({
                     id: encodeId(delegationData.candidate),
@@ -302,7 +309,6 @@ processor.addEventHandler('ParachainStaking.Delegation', async (ctx) => {
             }
             const prevCtx = createPrevBlockContext(ctx)
             const collatorsData = await getCollatorsData(prevCtx, [encodeId(delegationData.candidate)])
-            ctx.log.info(prevCtx)
             if (collatorsData) {
                 ctx.log.info('collatorsData')
                 ctx.log.info(collatorsData)
