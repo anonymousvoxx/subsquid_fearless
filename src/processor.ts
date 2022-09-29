@@ -157,9 +157,13 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                 where: { id: collatorLastRoundId },
                 take: 1,
             })
+            ctx.log.info('adding rewards')
+            collatorLastRound[0].rewardAmount = rewardData.rewards
             if (collatorLastRound[0].totalBond) {
-                collatorLastRound[0].rewardAmount = rewardData.rewards
-                collatorLastRound[0].apr = Number((BigInt(100) * rewardData.rewards) / collatorLastRound[0].totalBond)
+                const rel = rewardData.rewards / collatorLastRound[0].totalBond
+                collatorLastRound[0].apr = Number(rewardData.rewards / collatorLastRound[0].totalBond) * 100
+                ctx.log.info('apr_calc')
+                ctx.log.info(`${rel}`)
             }
             await ctx.store.save(collatorLastRound[0])
             const collatorSearch = await ctx.store.find(Collator, {
@@ -205,48 +209,6 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                     const agrApr = collator[0].apr24h || 0
                     collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
                     await ctx.store.save(collator[0])
-                } else {
-                    const roundFirst = await ctx.store.find(Round, {
-                        where: { index: lastRound[0].index - 3 },
-                        take: 1,
-                    })
-                    const collatorFirstRoundId = `${roundFirst[0].index}-${encodeId(rewardData.account)}`
-                    const collatorFirstRound = await ctx.store.find(CollatorRound, {
-                        where: { id: collatorFirstRoundId },
-                        take: 1,
-                    })
-                    if (collatorFirstRound[0]) {
-                        ctx.log.info(collator[0].id)
-                        const apr = collatorFirstRound[0].apr || 0
-                        const lastApr = collatorLastRound[0].apr || 0
-                        const agrApr = collator[0].apr24h || 0
-                        collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
-                        await ctx.store.save(collator[0])
-                    } else {
-                        const roundFirst = await ctx.store.find(Round, {
-                            where: { index: lastRound[0].index - 2 },
-                            take: 1,
-                        })
-                        const collatorFirstRoundId = `${roundFirst[0].index}-${encodeId(rewardData.account)}`
-                        const collatorFirstRound = await ctx.store.find(CollatorRound, {
-                            where: { id: collatorFirstRoundId },
-                            take: 1,
-                        })
-                        if (collatorFirstRound[0]) {
-                            ctx.log.info('3')
-                            ctx.log.info(collator[0].id)
-                            const apr = collatorFirstRound[0].apr || 0
-                            const lastApr = collatorLastRound[0].apr || 0
-                            const agrApr = collator[0].apr24h || 0
-                            collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
-                            await ctx.store.save(collator[0])
-                        } else {
-                            ctx.log.info('4')
-                            ctx.log.info(collator[0].id)
-                            collator[0].apr24h = collatorLastRound[0].apr
-                            await ctx.store.save(collator[0])
-                        }
-                    }
                 }
             }
         } else {
