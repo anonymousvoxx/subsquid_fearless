@@ -160,10 +160,10 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             ctx.log.info('adding rewards')
             collatorLastRound[0].rewardAmount = rewardData.rewards
             if (collatorLastRound[0].totalBond) {
-                const rel = BigInt(100000) * rewardData.rewards / collatorLastRound[0].totalBond
-                collatorLastRound[0].apr = Number(rewardData.rewards / collatorLastRound[0].totalBond) * 100
+                const rel = (BigInt(100000) * rewardData.rewards) / collatorLastRound[0].totalBond
+                collatorLastRound[0].apr = Number(BigInt(100000) * rewardData.rewards / collatorLastRound[0].totalBond)
                 ctx.log.info('apr_calc')
-                ctx.log.info(`${rel}`)
+                ctx.log.info(`${collatorLastRound[0].apr}`)
             }
             await ctx.store.save(collatorLastRound[0])
             const collatorSearch = await ctx.store.find(Collator, {
