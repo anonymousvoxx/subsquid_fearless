@@ -158,25 +158,44 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             })
             ctx.log.info('adding rewards')
             collatorLastRound[0].rewardAmount = rewardData.rewards
-            if (collatorLastRound[0].ownBond && collatorLastRound[0].totalBond) {
-                if (collatorLastRound[0].ownBond > BigInt(0) && collatorLastRound[0].totalBond > BigInt(0)) {
+            const prevCtx = createPrevBlockContext(ctx)
+            const collatorsData = await getCollatorsData(prevCtx, [encodeId(rewardData.account)])
+            if (collatorsData) {
+                ctx.log.info('collatorsData')
+                for (const collatorData of collatorsData) {
+                    if (!collatorData) continue
+
+                    let totalBond = collatorData.bond
+
+                    for (const nomination of collatorData.nominators) {
+                        totalBond += nomination.amount
+                    }
+                    collatorLastRound[0].ownBond = collatorData.bond
+                    collatorLastRound[0].totalBond = totalBond
+                    await ctx.store.save(collatorLastRound[0])
+                    ctx.log.info('newCollatorRound updated')
+
                     ctx.log.info('calc apr')
-                    const colStakeShare = Number(collatorLastRound[0].ownBond) / Number(collatorLastRound[0].totalBond)
+                    const colStakeShare = collatorLastRound[0].ownBond / collatorLastRound[0].totalBond
                     ctx.log.info(`${collatorLastRound[0].ownBond}/${collatorLastRound[0].totalBond}`)
                     ctx.log.info(`${colStakeShare}`)
-                    const amountDue = Number(rewardData.rewards) / (Number(0.2) + Number(0.5) * Number(colStakeShare))
+                    const amountDue =
+                        BigInt(rewardData.rewards) /
+                        (BigInt(2) / BigInt(100) + (BigInt(5) / BigInt(100)) * colStakeShare)
                     ctx.log.info(`${amountDue}`)
-                    const colRew = Number(0.2) * amountDue + Number(0.5) * Number(amountDue) * Number(colStakeShare)
+                    const colRew =
+                        (BigInt(2) / BigInt(100)) * amountDue + (BigInt(5) / BigInt(100)) * amountDue * colStakeShare
                     ctx.log.info(`${colRew}`)
-                    const colAnnualRew = colRew * Number(1460)
+                    const colAnnualRew = colRew * BigInt(1460)
                     ctx.log.info(`${colAnnualRew}`)
-                    const colAPR = colAnnualRew / Number(collatorLastRound[0].ownBond)
+                    const colAPR = colAnnualRew / collatorLastRound[0].ownBond
                     ctx.log.info(`${colAPR}`)
-                    collatorLastRound[0].apr = colAPR * Number(100)
+                    collatorLastRound[0].apr = Number(colAPR * BigInt(100))
                     ctx.log.info('apr_calc')
                     ctx.log.info(`${collatorLastRound[0].apr}`)
                 }
             }
+
             await ctx.store.save(collatorLastRound[0])
             const collatorSearch = await ctx.store.find(Collator, {
                 where: { id: encodeId(rewardData.account) },
