@@ -158,8 +158,7 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             })
             ctx.log.info('adding rewards')
             collatorLastRound[0].rewardAmount = rewardData.rewards
-            const prevCtx = createPrevBlockContext(ctx)
-            const collatorsData = await getCollatorsData(prevCtx, [encodeId(rewardData.account)])
+            const collatorsData = await getCollatorsData(ctx, [encodeId(rewardData.account)])
             if (collatorsData) {
                 ctx.log.info('collatorsData')
                 for (const collatorData of collatorsData) {
@@ -195,7 +194,6 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                     ctx.log.info(`${collatorLastRound[0].apr}`)
                 }
             }
-
             await ctx.store.save(collatorLastRound[0])
             const collatorSearch = await ctx.store.find(Collator, {
                 where: { id: encodeId(rewardData.account) },
