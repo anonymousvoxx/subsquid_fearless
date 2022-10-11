@@ -170,7 +170,7 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                 ctx.log.info(`${colAnnualRew}`)
                 const colAPR = colAnnualRew / Number(collatorLastRound[0].ownBond)
                 ctx.log.info(`${colAPR}`)
-                collatorLastRound[0].apr = colAPR
+                collatorLastRound[0].apr = colAPR * Number(100)
                 ctx.log.info('apr_calc')
                 ctx.log.info(`${collatorLastRound[0].apr}`)
             }
