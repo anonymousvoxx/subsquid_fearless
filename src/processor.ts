@@ -159,20 +159,23 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             ctx.log.info('adding rewards')
             collatorLastRound[0].rewardAmount = rewardData.rewards
             if (collatorLastRound[0].ownBond && collatorLastRound[0].totalBond) {
-                ctx.log.info('calc apr')
-                const colStakeShare = collatorLastRound[0].ownBond / collatorLastRound[0].totalBond
-                ctx.log.info(`${colStakeShare}`)
-                const amountDue = Number(rewardData.rewards) / (Number(0.2) + Number(0.5) * Number(colStakeShare))
-                ctx.log.info(`${amountDue}`)
-                const colRew = Number(0.2) * amountDue + Number(0.5) * Number(amountDue) * Number(colStakeShare)
-                ctx.log.info(`${colRew}`)
-                const colAnnualRew = colRew * Number(1460)
-                ctx.log.info(`${colAnnualRew}`)
-                const colAPR = colAnnualRew / Number(collatorLastRound[0].ownBond)
-                ctx.log.info(`${colAPR}`)
-                collatorLastRound[0].apr = colAPR * Number(100)
-                ctx.log.info('apr_calc')
-                ctx.log.info(`${collatorLastRound[0].apr}`)
+                if (collatorLastRound[0].ownBond > BigInt(0) && collatorLastRound[0].totalBond > BigInt(0)) {
+                    ctx.log.info('calc apr')
+                    const colStakeShare = Number(collatorLastRound[0].ownBond) / Number(collatorLastRound[0].totalBond)
+                    ctx.log.info(`${collatorLastRound[0].ownBond}/${collatorLastRound[0].totalBond}`)
+                    ctx.log.info(`${colStakeShare}`)
+                    const amountDue = Number(rewardData.rewards) / (Number(0.2) + Number(0.5) * Number(colStakeShare))
+                    ctx.log.info(`${amountDue}`)
+                    const colRew = Number(0.2) * amountDue + Number(0.5) * Number(amountDue) * Number(colStakeShare)
+                    ctx.log.info(`${colRew}`)
+                    const colAnnualRew = colRew * Number(1460)
+                    ctx.log.info(`${colAnnualRew}`)
+                    const colAPR = colAnnualRew / Number(collatorLastRound[0].ownBond)
+                    ctx.log.info(`${colAPR}`)
+                    collatorLastRound[0].apr = colAPR * Number(100)
+                    ctx.log.info('apr_calc')
+                    ctx.log.info(`${collatorLastRound[0].apr}`)
+                }
             }
             await ctx.store.save(collatorLastRound[0])
             const collatorSearch = await ctx.store.find(Collator, {
@@ -220,11 +223,9 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                     collatorLastRound[0].rewardAmount = rewardData.rewards
                     await ctx.store.save(collatorLastRound[0])
                     const apr = collatorFirstRound[0].apr || 0
-                    const corApr = apr / 100
                     const lastApr = collatorLastRound[0].apr || 0
-                    const corLastApr = lastApr / 100
                     const agrApr = collator[0].apr24h || 0
-                    collator[0].apr24h = Number((agrApr * 4 - corApr + corLastApr) / 4)
+                    collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
                     await ctx.store.save(collator[0])
                 }
             }
