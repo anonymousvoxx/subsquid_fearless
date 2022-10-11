@@ -158,22 +158,8 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             })
             ctx.log.info('adding rewards')
             collatorLastRound[0].rewardAmount = rewardData.rewards
-            const collatorsData = await getCollatorsData(ctx, [encodeId(rewardData.account)])
-            if (collatorsData) {
-                ctx.log.info('collatorsData')
-                for (const collatorData of collatorsData) {
-                    if (!collatorData) continue
-
-                    let totalBond = collatorData.bond
-
-                    for (const nomination of collatorData.nominators) {
-                        totalBond += nomination.amount
-                    }
-                    collatorLastRound[0].ownBond = collatorData.bond
-                    collatorLastRound[0].totalBond = totalBond
-                    await ctx.store.save(collatorLastRound[0])
-                    ctx.log.info('newCollatorRound updated')
-
+            if (collatorLastRound[0].ownBond && collatorLastRound[0].totalBond) {
+                if (collatorLastRound[0].ownBond > BigInt(0) && collatorLastRound[0].totalBond > BigInt(0)) {
                     ctx.log.info('calc apr')
                     const colStakeShare = collatorLastRound[0].ownBond / collatorLastRound[0].totalBond
                     ctx.log.info(`${collatorLastRound[0].ownBond}/${collatorLastRound[0].totalBond}`)
