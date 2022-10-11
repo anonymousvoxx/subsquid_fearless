@@ -158,8 +158,13 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             })
             ctx.log.info('adding rewards')
             collatorLastRound[0].rewardAmount = rewardData.rewards
-            if (collatorLastRound[0].ownBond) {
-                collatorLastRound[0].apr = Number(BigInt(100000) * rewardData.rewards / collatorLastRound[0].ownBond)
+            if (collatorLastRound[0].ownBond && collatorLastRound[0].totalBond) {
+                const colStakeShare = collatorLastRound[0].ownBond / collatorLastRound[0].totalBond
+                const amountDue = rewardData.rewards / (BigInt(0.2) + BigInt(0.5) * colStakeShare)
+                const colRew = BigInt(0.2) * amountDue + BigInt(0.5) * amountDue * colStakeShare
+                const colAnnualRew = colRew * BigInt(1460)
+                const colAPR = colAnnualRew / collatorLastRound[0].ownBond
+                collatorLastRound[0].apr = Number(colAPR)
                 ctx.log.info('apr_calc')
                 ctx.log.info(`${collatorLastRound[0].apr}`)
             }
@@ -200,12 +205,20 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                     where: { id: collatorLastRoundId },
                     take: 1,
                 })
+                const bond = collatorLastRound[0].ownBond
                 if (collatorFirstRound[0]) {
                     ctx.log.info(collator[0].id)
+                    if (bond) {
+                        collatorLastRound[0].apr = Number(rewardData.rewards / bond)
+                    }
+                    collatorLastRound[0].rewardAmount = rewardData.rewards
+                    await ctx.store.save(collatorLastRound[0])
                     const apr = collatorFirstRound[0].apr || 0
+                    const corApr = apr / 100
                     const lastApr = collatorLastRound[0].apr || 0
+                    const corLastApr = lastApr / 100
                     const agrApr = collator[0].apr24h || 0
-                    collator[0].apr24h = Number((agrApr * 4 - apr + lastApr) / 4)
+                    collator[0].apr24h = Number((agrApr * 4 - corApr + corLastApr) / 4)
                     await ctx.store.save(collator[0])
                 }
             }
