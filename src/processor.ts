@@ -161,23 +161,22 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
             if (collatorLastRound[0].ownBond && collatorLastRound[0].totalBond) {
                 if (collatorLastRound[0].ownBond > BigInt(0) && collatorLastRound[0].totalBond > BigInt(0)) {
                     ctx.log.info('calc apr')
+                    ctx.log.info(`collator: ${encodeId(rewardData.account)}`)
+                    ctx.log.info(`rewards: ${rewardData.rewards}`)
                     const colStakeShare = collatorLastRound[0].ownBond / collatorLastRound[0].totalBond
                     ctx.log.info(`${collatorLastRound[0].ownBond}/${collatorLastRound[0].totalBond}`)
-                    ctx.log.info(`${colStakeShare}`)
-                    const amountDue =
-                        BigInt(rewardData.rewards) /
-                        (BigInt(2) / BigInt(100) + (BigInt(5) / BigInt(100)) * colStakeShare)
-                    ctx.log.info(`${amountDue}`)
-                    const colRew =
-                        (BigInt(2) / BigInt(100)) * amountDue + (BigInt(5) / BigInt(100)) * amountDue * colStakeShare
-                    ctx.log.info(`${colRew}`)
-                    const colAnnualRew = colRew * BigInt(1460)
-                    ctx.log.info(`${colAnnualRew}`)
-                    const colAPR = colAnnualRew / collatorLastRound[0].ownBond
-                    ctx.log.info(`${colAPR}`)
-                    collatorLastRound[0].apr = Number(colAPR * BigInt(100))
+                    ctx.log.info(`colStakeShare: ${colStakeShare}`)
+                    const amountDue = Number(rewardData.rewards) / (0.2 + 0.5 * Number(colStakeShare))
+                    ctx.log.info(`amountDue: ${amountDue}`)
+                    const colRew = 0.2 * amountDue + 0.5 * amountDue * Number(colStakeShare)
+                    ctx.log.info(`colRew: ${colRew}`)
+                    const colAnnualRew = colRew * 1460
+                    ctx.log.info(`colAnnualRew: ${colAnnualRew}`)
+                    const colAPR = colAnnualRew / Number(collatorLastRound[0].ownBond)
+                    ctx.log.info(`colAPR: ${colAPR}`)
+                    collatorLastRound[0].apr = colAPR
                     ctx.log.info('apr_calc')
-                    ctx.log.info(`${collatorLastRound[0].apr}`)
+                    ctx.log.info(`APR: ${collatorLastRound[0].apr}`)
                 }
             }
             await ctx.store.save(collatorLastRound[0])
