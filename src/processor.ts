@@ -163,7 +163,7 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
                     ctx.log.info('calc apr')
                     ctx.log.info(`collator: ${encodeId(rewardData.account)}`)
                     ctx.log.info(`rewards: ${rewardData.rewards}`)
-                    const colStakeShare = collatorLastRound[0].ownBond / collatorLastRound[0].totalBond
+                    const colStakeShare = Number(collatorLastRound[0].ownBond) / Number(collatorLastRound[0].totalBond)
                     ctx.log.info(`${collatorLastRound[0].ownBond}/${collatorLastRound[0].totalBond}`)
                     ctx.log.info(`colStakeShare: ${colStakeShare}`)
                     const amountDue = Number(rewardData.rewards) / (0.2 + 0.5 * Number(colStakeShare))
