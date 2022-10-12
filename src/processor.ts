@@ -574,7 +574,7 @@ processor.addEventHandler('ParachainStaking.DelegationIncreased', async (ctx) =>
         const collatorEntity = await ctx.store.find(Collator, { where: { id: collator[0].collator }, take: 1 })
         const delegatorEntity = await ctx.store.find(Delegator, { where: { id: delegator[0].account }, take: 1 })
         const historyElement = new DelegatorHistoryElement({
-            id: `${lastRound[0].index}-${collator[0].collator}-${delegator[0].account}-${ctx.block.timestamp}`,
+            id: `${lastRound[0].index}-${collator[0].collator}-${delegator[0].account}-${ctx.block.timestamp}-${ctx.event.id}`,
             blockNumber: ctx.block.height,
             delegator: delegatorEntity[0],
             collator: collatorEntity[0],
