@@ -780,7 +780,11 @@ function getRewardedEventData(ctx: EventContext): { account: Uint8Array; rewards
         const [account, rewards] = event.asV1001
         return { account, rewards }
     } else if (event.isV1300) {
-        return event.asV1300
+        const { account, rewards: amount } = event.asV1300
+        return {
+            account,
+            rewards: amount,
+        }
     }
     throw new UnknownVersionError(event.constructor.name)
 }
