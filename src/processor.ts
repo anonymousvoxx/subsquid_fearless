@@ -143,7 +143,7 @@ processor.addEventHandler('ParachainStaking.Rewarded', async (ctx) => {
     const rewardData = getRewardedEventData(ctx)
     const lastRound = await ctx.store.find(Round, {
         order: {
-            id: 'DESC',
+            index: 'DESC',
         },
         take: 1,
     })
@@ -259,7 +259,7 @@ processor.addEventHandler('ParachainStaking.Delegation', async (ctx) => {
     const delegationData = getNewDelegationEventData(ctx)
     const lastRound = await ctx.store.find(Round, {
         order: {
-            id: 'DESC',
+            index: 'DESC',
         },
         take: 1,
     })
@@ -391,7 +391,7 @@ processor.addEventHandler('ParachainStaking.DelegationDecreased', async (ctx) =>
     const decreaseData = getBondedLessEventData(ctx)
     const lastRound = await ctx.store.find(Round, {
         order: {
-            id: 'DESC',
+            index: 'DESC',
         },
         take: 1,
     })
@@ -478,7 +478,7 @@ processor.addEventHandler('ParachainStaking.DelegationIncreased', async (ctx) =>
     const increaseData = getDelegatorBondedMoreEventData(ctx)
     const lastRound = await ctx.store.find(Round, {
         order: {
-            id: 'DESC',
+            index: 'DESC',
         },
         take: 1,
     })
@@ -591,7 +591,7 @@ processor.addEventHandler('ParachainStaking.DelegationRevoked', async (ctx) => {
     const revokeData = getDelegationRevokedEventData(ctx)
     const lastRound = await ctx.store.find(Round, {
         order: {
-            id: 'DESC',
+            index: 'DESC',
         },
         take: 1,
     })
